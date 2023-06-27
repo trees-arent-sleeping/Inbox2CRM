@@ -2,6 +2,7 @@ const express = require("express");
 require("dotenv").config();
 const { google } = require("googleapis");
 const bodyParser = require("body-parser");
+const opn = require("opn");
 
 const app = express();
 app.use(bodyParser.json());
@@ -43,6 +44,26 @@ app.post("/webhook", async (req, res) => {
     console.error("error handling Gmail notification:", error);
     res.sendStatus(500);
   }
+});
+
+// handle auth callback
+app.get("/auth/callback", async (req, res) => {
+  const { code } = req.query;
+
+  const { tokens } = await oauth2Client.getToken(code);
+  oauth2Client.setCredentials(tokens);
+
+  res.send("authentication successful! you can close this tab.");
+});
+
+// handle login
+app.get("/login", (req, res) => {
+  const authorizeUrl = oauth2Client.generateAuthUrl({
+    access_type: "offline",
+    scope: ["https://www.googleapis.com/auth/gmail.readonly"],
+  });
+  opn(authorizeUrl);
+  res.send("please check your browser to login...");
 });
 
 // start the server
